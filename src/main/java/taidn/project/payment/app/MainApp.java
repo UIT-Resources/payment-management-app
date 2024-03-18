@@ -1,6 +1,7 @@
 package taidn.project.payment.app;
 
 import taidn.project.payment.app.entities.Bill;
+import taidn.project.payment.app.entities.BillState;
 import taidn.project.payment.app.entities.Command;
 import taidn.project.payment.app.entities.Payment;
 import taidn.project.payment.app.services.AccountService;
@@ -57,6 +58,12 @@ public class MainApp {
                         case LIST_BILL:
                             List<Bill> bills = billService.listAll();
                             printListBillAsRows(bills);
+                            break;
+
+                        case DUE_DATE:
+                            List<Bill> allBills = billService.listAll();
+                            List<Bill> notPaidBills = allBills.stream().filter(b -> b.getState() == BillState.NOT_PAID).collect(Collectors.toList());
+                            printListBillAsRows(notPaidBills);
                             break;
 
                         case CREATE_BILL:
