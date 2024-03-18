@@ -1,11 +1,15 @@
 package taidn.project.payment.app;
 
+import taidn.project.payment.app.entities.Bill;
 import taidn.project.payment.app.entities.Command;
 import taidn.project.payment.app.services.AccountService;
+import taidn.project.payment.app.services.BillService;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.StringJoiner;
 
 /**
  * Hello world!
@@ -13,6 +17,7 @@ import java.util.Scanner;
  */
 public class MainApp{
     private final static AccountService accountService = new AccountService();
+    private final static BillService billService = new BillService();
     public static void main( String[] args )
     {
         System.out.println( "--------- Payment Management App ---------" );
@@ -42,6 +47,22 @@ public class MainApp{
                     } catch (RuntimeException e) {
                         System.err.printf("Command failed by error: %n%s%n", e.getMessage());
                     }
+                    break;
+                case LIST_BILL:
+                    List<Bill> bills = billService.listAll();
+                    Field[] fields = Bill.class.getDeclaredFields();
+                    StringJoiner header = new StringJoiner("\t");
+                    for (Field field : fields) {
+                        header.add(field.getName());
+                    }
+                    System.out.println(header);
+                    for (Bill bill : bills) {
+                        bill.printAsRowSeparateByTab();
+                    }
+                    break;
+                case CREATE_BILL:
+                    Bill createdBill = billService.create();
+                    System.out.printf("Created. %s%n", createdBill);
                     break;
                 case EXIT:
                     System.out.println("Good bye!");
