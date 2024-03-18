@@ -23,6 +23,10 @@ public class BillService {
         return billDAO.getById(id);
     }
 
+    public BillDAO getBillDAO() {
+        return billDAO;
+    }
+
 
     public Bill create() {
         try {
