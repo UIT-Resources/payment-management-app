@@ -7,5 +7,8 @@ public enum Command {
     DELETE_BILL,
     SEARCH_BILL_BY_PROVIDER,
     UPDATE_BILL,
+    LIST_PAYMENT,
+    PAY,
+    SCHEDULE,
     EXIT;
 }

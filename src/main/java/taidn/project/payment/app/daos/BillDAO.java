@@ -13,7 +13,8 @@ public class BillDAO extends BaseDAO<Bill> {
     public BillDAO() {
         // TODO: Remove mock data
         map.put(111, new Bill(111, "type1", 10000, LocalDate.now(), BillState.NOT_PAID, "FPT"));
-        map.put(112, new Bill(112, "type2", 10000, LocalDate.now().minusDays(6), BillState.PAID, "VNPT"));
+        map.put(112, new Bill(112, "type2", 10000, LocalDate.now().minusDays(6), BillState.NOT_PAID, "VNPT"));
+        map.put(113, new Bill(113, "type2", 10000, LocalDate.now().minusDays(6), BillState.PAID, "VNPT"));
     }
 
     @Override
@@ -24,7 +25,7 @@ public class BillDAO extends BaseDAO<Bill> {
     @Override
     public Bill getById(Integer id) {
         if (!map.containsKey(id)) {
-            throw new RuntimeException(String.format("Not exist bill with id %s", id));
+            throw new RuntimeException("Sorry! Not found a bill with such id");
         }
         return map.get(id);
     }
