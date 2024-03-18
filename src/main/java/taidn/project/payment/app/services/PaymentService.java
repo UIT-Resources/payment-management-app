@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Scanner;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -21,6 +21,7 @@ public class PaymentService {
     private final PaymentDAO paymentDao = new PaymentDAO();
     private final BillService billService = BillService.INSTANCE;
     private final AccountService accountService = AccountService.INSTANCE;
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(8);
 
     public List<Payment> listAll(){
         return paymentDao.getAll();
@@ -89,5 +90,31 @@ public class PaymentService {
         Payment payment = paymentDao.getById(id);
         payment.setState(state);
         return paymentDao.update(payment);
+    }
+
+    public void schedule(Integer scheduleBillId, LocalDate scheduleDate) {
+        LocalDate now = LocalDate.now();
+        if (scheduleDate.isBefore(now)) {
+            throw new RuntimeException("Invalid date");
+        }
+        Bill bill = billService.getById(scheduleBillId);
+        if (bill.getState() == BillState.PAID) {
+            throw new RuntimeException("Bill has already paid");
+        }
+        int delayedDays = now.until(scheduleDate).getDays();
+        System.out.printf("Payment for bill id %s is scheduled on %s%n after %s days%n", scheduleBillId, scheduleDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), delayedDays);
+        scheduledExecutorService.schedule(() -> {
+            try {
+                payBill(bill.getId());
+            } catch (RuntimeException e) {
+                System.err.printf("payBill failed by error: %n%s%n", e.getMessage());
+            } catch (Throwable throwable ){
+                System.err.printf("Something went wrong by error: %s%n", throwable.getMessage());
+            }
+        }, delayedDays, TimeUnit.DAYS);
+    }
+
+    public List<Runnable> shutdownAllScheduleTask(){
+        return scheduledExecutorService.shutdownNow();
     }
 }
