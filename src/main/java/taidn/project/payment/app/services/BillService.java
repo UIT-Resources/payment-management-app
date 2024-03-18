@@ -45,4 +45,12 @@ public class BillService {
             throw new RuntimeException(msg, e);
         }
     }
+
+    public Bill delete(Integer id){
+        return billDAO.delete(id);
+    }
+
+    public List<Bill> searchByProvider(String provider){
+        return billDAO.searchByProvider(provider);
+    }
 }

@@ -48,26 +48,51 @@ public class MainApp{
                         System.err.printf("Command failed by error: %n%s%n", e.getMessage());
                     }
                     break;
+
                 case LIST_BILL:
                     List<Bill> bills = billService.listAll();
-                    Field[] fields = Bill.class.getDeclaredFields();
-                    StringJoiner header = new StringJoiner("\t");
-                    for (Field field : fields) {
-                        header.add(field.getName());
-                    }
-                    System.out.println(header);
-                    for (Bill bill : bills) {
-                        bill.printAsRowSeparateByTab();
-                    }
+                    printListBillAsRows(bills);
                     break;
+
                 case CREATE_BILL:
                     Bill createdBill = billService.create();
                     System.out.printf("Created. %s%n", createdBill);
                     break;
+
+                case DELETE_BILL:
+                    if (lineParts.size() != 2) {
+                        throw new RuntimeException(String.format("Command expect 1 argument, but received %s.", lineParts.size() - 1));
+                    }
+                    Integer billId = Integer.parseInt(lineParts.get(1));
+                    Bill deletedBill = billService.delete(billId);
+                    System.out.printf("Deleted bill: %s%n", deletedBill);
+                    break ;
+
+                case SEARCH_BILL_BY_PROVIDER:
+                    if (lineParts.size() != 2) {
+                        throw new RuntimeException(String.format("Command expect 1 argument, but received %s.", lineParts.size() - 1));
+                    }
+                    String provider = lineParts.get(1);
+                    List<Bill> foundBills = billService.searchByProvider(provider);
+                    printListBillAsRows(foundBills);
+                    break;
+
                 case EXIT:
                     System.out.println("Good bye!");
                     break mainFlow;
             }
+        }
+    }
+
+    private static void printListBillAsRows(List<Bill> bills) {
+        Field[] fields = Bill.class.getDeclaredFields();
+        StringJoiner header = new StringJoiner("\t");
+        for (Field field : fields) {
+            header.add(field.getName());
+        }
+        System.out.println(header);
+        for (Bill bill : bills) {
+            bill.printAsRowSeparateByTab();
         }
     }
 }
