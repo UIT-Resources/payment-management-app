@@ -29,6 +29,8 @@ public class MainApp {
         try {
 
             System.out.println("--------- Payment Management App ---------");
+            String commands = Arrays.stream(Command.values()).map(Command::name).collect(Collectors.joining(", "));
+            System.out.printf("[Supported commands: %s]%n", commands);
             Scanner sc = new Scanner(System.in);
             mainFlow:
             while (sc.hasNext()) {
