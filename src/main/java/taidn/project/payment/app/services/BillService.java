@@ -37,14 +37,19 @@ public class BillService {
 
             System.out.println("Enter type: ");
             newBill.setType(sc.next());
+
             System.out.println("Enter amount: ");
             newBill.setAmount(sc.nextInt());
+
             System.out.println("Enter dueDate (day/month/year): ");
             String rawDate = sc.next();
+
             LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
             newBill.setDueDate(dueDate);
+
             System.out.println("Enter provider: ");
             newBill.setProvider(sc.next());
+
             billDAO.create(newBill);
             return newBill;
         } catch (RuntimeException e) {
@@ -75,13 +80,17 @@ public class BillService {
 
             System.out.println("Enter new type: ");
             bill.setType(sc.next());
+
             System.out.println("Enter provider: ");
             bill.setProvider(sc.next());
+
             if (bill.getState() == BillState.NOT_PAID) {
                 System.out.println("Enter new amount: ");
                 bill.setAmount(sc.nextInt());
+
                 System.out.println("Enter new dueDate (day/month/year): ");
                 String rawDate = sc.next();
+
                 LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
                 bill.setDueDate(dueDate);
             }
@@ -94,9 +103,9 @@ public class BillService {
         }
     }
 
-    public Bill updateState(Integer billId, BillState state) {
+    public void updateState(Integer billId, BillState state) {
         Bill bill = billDAO.getById(billId);
         bill.setState(state);
-        return billDAO.update(bill);
+        billDAO.update(bill);
     }
 }

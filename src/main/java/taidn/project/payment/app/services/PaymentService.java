@@ -102,12 +102,12 @@ public class PaymentService {
             throw new RuntimeException("Bill has already paid");
         }
         int delayedDays = now.until(scheduleDate).getDays();
-        System.out.printf("Payment for bill id %s is scheduled on %s%n after %s days%n", scheduleBillId, scheduleDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), delayedDays);
+        System.out.printf("Payment for bill id %s is scheduled on %s%n", scheduleBillId, scheduleDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         scheduledExecutorService.schedule(() -> {
             try {
                 payBill(bill.getId());
             } catch (RuntimeException e) {
-                System.err.printf("payBill failed by error: %n%s%n", e.getMessage());
+                System.err.printf("%n%s%n", e.getMessage());
             } catch (Throwable throwable ){
                 System.err.printf("Something went wrong by error: %s%n", throwable.getMessage());
             }
