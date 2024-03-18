@@ -82,7 +82,7 @@ public class MainApp {
                             break mainFlow;
                     }
                 } catch (RuntimeException e) {
-                    System.err.printf("%n%s%n", e.getMessage());
+                    System.err.printf("%s%n", e.getMessage());
                 }
             }
         } catch (Throwable throwable) {
