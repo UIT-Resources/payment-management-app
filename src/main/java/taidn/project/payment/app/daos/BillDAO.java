@@ -11,10 +11,6 @@ public class BillDAO extends BaseDAO<Bill> {
     private final Map<Integer, Bill> map = new HashMap<>();
 
     public BillDAO() {
-        // TODO: Remove mock data
-        map.put(111, new Bill(111, "type1", 10000, LocalDate.now(), BillState.NOT_PAID, "FPT"));
-        map.put(112, new Bill(112, "type2", 10000, LocalDate.now().minusDays(6), BillState.NOT_PAID, "VNPT"));
-        map.put(113, new Bill(113, "type2", 10000, LocalDate.now().minusDays(6), BillState.PAID, "VNPT"));
     }
 
     @Override
