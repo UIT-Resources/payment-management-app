@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Map;
 
 public class BaseDAO <Entity> {
+    public Boolean isExist(Integer id) {
+        throw new UnsupportedOperationException("Unsupported method");
+    }
     public List<Entity> getAll() {
         throw new UnsupportedOperationException("Unsupported method");
     }

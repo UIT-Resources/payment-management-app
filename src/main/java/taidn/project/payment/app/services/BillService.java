@@ -53,4 +53,35 @@ public class BillService {
     public List<Bill> searchByProvider(String provider){
         return billDAO.searchByProvider(provider);
     }
+
+    public Bill update() {
+        try {
+            Scanner sc = new Scanner(System.in);
+            System.out.println("Which bill do you want to update ? Enter bill id: ");
+            Integer billId = sc.nextInt();
+            if (!billDAO.isExist(billId)) {
+                throw new RuntimeException("Bill is not exited");
+            }
+            Bill bill = billDAO.getById(billId);
+
+            System.out.println("Enter new type: ");
+            bill.setType(sc.next());
+            System.out.println("Enter provider: ");
+            bill.setProvider(sc.next());
+            if (bill.getState() == BillState.NOT_PAID) {
+                System.out.println("Enter new amount: ");
+                bill.setAmount(sc.nextInt());
+                System.out.println("Enter new dueDate (day/month/year): ");
+                String rawDate = sc.next();
+                LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
+                bill.setDueDate(dueDate);
+            }
+            return billDAO.update(bill);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            String msg = "Create bill failed. Something went wrong, please try again!";
+            throw new RuntimeException(msg, e);
+        }
+    }
 }
