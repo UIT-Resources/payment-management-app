@@ -85,7 +85,7 @@ public class MainApp {
                     throw new RuntimeException("Unsupported commands");
             }
         } catch (IllegalArgumentException e) {
-            System.err.println("Command is invalid. Please try again !");
+            System.err.println("Command invalid. Please try again !");
         } catch (RuntimeException e) {
             System.err.printf("%s%n", e.getMessage());
         }
@@ -110,19 +110,24 @@ public class MainApp {
     }
 
     private static Bill guideUserInputBillInfo() {
-        Scanner sc = new Scanner(System.in);
-        Bill createParams = new Bill();
-        System.out.println("Enter type: ");
-        createParams.setType(sc.next());
-        System.out.println("Enter amount: ");
-        createParams.setAmount(sc.nextInt());
-        System.out.println("Enter dueDate (day/month/year): ");
-        String rawDate = sc.next();
-        LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
-        createParams.setDueDate(dueDate);
-        System.out.println("Enter provider: ");
-        createParams.setProvider(sc.next());
-        return createParams;
+        try {
+
+            Scanner sc = new Scanner(System.in);
+            Bill createParams = new Bill();
+            System.out.println("Enter type: ");
+            createParams.setType(sc.nextLine());
+            System.out.println("Enter amount: ");
+            createParams.setAmount(Integer.parseInt(sc.nextLine()));
+            System.out.println("Enter dueDate (day/month/year): ");
+            String rawDate = sc.nextLine();
+            LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
+            createParams.setDueDate(dueDate);
+            System.out.println("Enter provider: ");
+            createParams.setProvider(sc.nextLine());
+            return createParams;
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid input. Please try again!");
+        }
     }
 
     private static void releaseResources() {
@@ -164,34 +169,38 @@ public class MainApp {
     }
 
     private static Bill guideUserUpdateBillInfo() {
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Which bill do you want to update ? Enter bill id: ");
-        Integer billId = sc.nextInt();
-        Bill bill = billService.getBillById(billId);
+        try {
+            Scanner sc = new Scanner(System.in);
+            System.out.println("Which bill do you want to update ? Enter bill id: ");
+            Integer billId = Integer.parseInt(sc.nextLine());
+            Bill bill = billService.getBillById(billId);
 
-        System.out.println("Enter new type: ");
-        bill.setType(sc.next());
+            System.out.println("Enter new type: ");
+            bill.setType(sc.nextLine());
 
-        System.out.println("Enter new provider: ");
-        bill.setProvider(sc.next());
+            System.out.println("Enter new provider: ");
+            bill.setProvider(sc.nextLine());
 
-        if (bill.getState() == BillState.NOT_PAID) {
-            System.out.println("Enter new amount: ");
-            bill.setAmount(sc.nextInt());
+            if (bill.getState() == BillState.NOT_PAID) {
+                System.out.println("Enter new amount: ");
+                bill.setAmount(Integer.parseInt(sc.nextLine()));
 
-            System.out.println("Enter new dueDate (day/month/year): ");
-            String rawDate = sc.next();
-            LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
-            bill.setDueDate(dueDate);
+                System.out.println("Enter new dueDate (day/month/year): ");
+                String rawDate = sc.nextLine();
+                LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
+                bill.setDueDate(dueDate);
+            }
+            return bill;
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid input. Please try again!");
         }
-        return bill;
     }
 
     private static void processSearchBillByProvider(List<String> lineParts) {
-        if (lineParts.size() != 2) {
+        if (lineParts.size() < 2) {
             throw new RuntimeException(String.format("Command expect 1 argument, but received %s.", lineParts.size() - 1));
         }
-        String provider = lineParts.get(1);
+        String provider = String.join(" ", lineParts.subList(1, lineParts.size()));
         List<Bill> foundBills = billService.searchByProvider(provider);
         printListBillAsRows(foundBills);
     }
