@@ -91,19 +91,36 @@ public class MainApp {
     }
 
     private static void processListBill() {
-        List<Bill> bills = billService.listAll();
+        List<Bill> bills = billService.getAllBills();
         printListBillAsRows(bills);
     }
 
     private static void processDueDate() {
-        List<Bill> allBills = billService.listAll();
+        List<Bill> allBills = billService.getAllBills();
         List<Bill> notPaidBills = allBills.stream().filter(b -> b.getState() == BillState.NOT_PAID).collect(Collectors.toList());
         printListBillAsRows(notPaidBills);
     }
 
     private static void processCreateBill() {
-        Bill createdBill = billService.create();
+        Bill createParams = guideUserInputBillInfo();
+        Bill createdBill = billService.createBill(createParams);
         System.out.printf("Created. %s%n", createdBill);
+    }
+
+    private static Bill guideUserInputBillInfo() {
+        Scanner sc = new Scanner(System.in);
+        Bill createParams = new Bill();
+        System.out.println("Enter type: ");
+        createParams.setType(sc.next());
+        System.out.println("Enter amount: ");
+        createParams.setAmount(sc.nextInt());
+        System.out.println("Enter dueDate (day/month/year): ");
+        String rawDate = sc.next();
+        LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
+        createParams.setDueDate(dueDate);
+        System.out.println("Enter provider: ");
+        createParams.setProvider(sc.next());
+        return createParams;
     }
 
     private static void releaseResources() {
@@ -139,8 +156,33 @@ public class MainApp {
     }
 
     private static void processUpdateBill() {
-        Bill updatedBill = billService.update();
+        Bill bill = guideUserUpdateBillInfo();
+        Bill updatedBill = billService.updateBill(bill);
         System.out.printf("Updated.%s%n", updatedBill);
+    }
+
+    private static Bill guideUserUpdateBillInfo() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Which bill do you want to update ? Enter bill id: ");
+        Integer billId = sc.nextInt();
+        Bill bill = billService.getBillById(billId);
+
+        System.out.println("Enter new type: ");
+        bill.setType(sc.next());
+
+        System.out.println("Enter new provider: ");
+        bill.setProvider(sc.next());
+
+        if (bill.getState() == BillState.NOT_PAID) {
+            System.out.println("Enter new amount: ");
+            bill.setAmount(sc.nextInt());
+
+            System.out.println("Enter new dueDate (day/month/year): ");
+            String rawDate = sc.next();
+            LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
+            bill.setDueDate(dueDate);
+        }
+        return bill;
     }
 
     private static void processSearchBillByProvider(List<String> lineParts) {
@@ -157,7 +199,7 @@ public class MainApp {
             throw new RuntimeException(String.format("Command expect 1 argument, but received %s.", lineParts.size() - 1));
         }
         Integer billId = Integer.parseInt(lineParts.get(1));
-        Bill deletedBill = billService.delete(billId);
+        Bill deletedBill = billService.deleteBill(billId);
         System.out.printf("Deleted bill: %s%n", deletedBill);
     }
 

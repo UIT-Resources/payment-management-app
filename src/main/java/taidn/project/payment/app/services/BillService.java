@@ -4,10 +4,7 @@ import taidn.project.payment.app.daos.BillDAO;
 import taidn.project.payment.app.entities.Bill;
 import taidn.project.payment.app.entities.BillState;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class BillService {
@@ -15,94 +12,30 @@ public class BillService {
     private final BillDAO billDAO = BillDAO.INSTANCE;
     private final AtomicInteger idGenerator = new AtomicInteger(0);
 
-    private BillService() {}
+    private BillService() {
+    }
 
-    public List<Bill> listAll() {
+    public List<Bill> getAllBills() {
         return billDAO.getAll();
     }
 
-    public Bill getById(Integer id) {
+    public Bill getBillById(Integer id) {
         return billDAO.getById(id);
     }
 
-    public BillDAO getBillDAO() {
-        return billDAO;
+    public Bill createBill(Bill param) {
+        param.setId(idGenerator.getAndIncrement());
+        param.setState(BillState.NOT_PAID);
+        return billDAO.create(param);
     }
 
-
-    public Bill create() {
-        try {
-            Scanner sc = new Scanner(System.in);
-            Bill newBill = new Bill();
-            newBill.setId(idGenerator.getAndIncrement());
-            newBill.setState(BillState.NOT_PAID);
-
-            System.out.println("Enter type: ");
-            newBill.setType(sc.next());
-
-            System.out.println("Enter amount: ");
-            newBill.setAmount(sc.nextInt());
-
-            System.out.println("Enter dueDate (day/month/year): ");
-            String rawDate = sc.next();
-
-            LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
-            newBill.setDueDate(dueDate);
-
-            System.out.println("Enter provider: ");
-            newBill.setProvider(sc.next());
-
-            billDAO.create(newBill);
-            return newBill;
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            String msg = "Create bill failed. Something went wrong, please try again!";
-            throw new RuntimeException(msg, e);
-        }
-    }
-
-    public Bill delete(Integer id) {
+    public Bill deleteBill(Integer id) {
         return billDAO.delete(id);
     }
 
-    public List<Bill> searchByProvider(String provider) {
-        return billDAO.searchByProvider(provider);
-    }
+    public Bill updateBill(Bill param) {
+        return billDAO.update(param);
 
-    public Bill update() {
-        try {
-            Scanner sc = new Scanner(System.in);
-            System.out.println("Which bill do you want to update ? Enter bill id: ");
-            Integer billId = sc.nextInt();
-            if (!billDAO.isExist(billId)) {
-                throw new RuntimeException("Bill is not exited");
-            }
-            Bill bill = billDAO.getById(billId);
-
-            System.out.println("Enter new type: ");
-            bill.setType(sc.next());
-
-            System.out.println("Enter provider: ");
-            bill.setProvider(sc.next());
-
-            if (bill.getState() == BillState.NOT_PAID) {
-                System.out.println("Enter new amount: ");
-                bill.setAmount(sc.nextInt());
-
-                System.out.println("Enter new dueDate (day/month/year): ");
-                String rawDate = sc.next();
-
-                LocalDate dueDate = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern("d/M/y"));
-                bill.setDueDate(dueDate);
-            }
-            return billDAO.update(bill);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            String msg = "Create bill failed. Something went wrong, please try again!";
-            throw new RuntimeException(msg, e);
-        }
     }
 
     public void updateState(Integer billId, BillState state) {
@@ -110,4 +43,9 @@ public class BillService {
         bill.setState(state);
         billDAO.update(bill);
     }
+
+    public List<Bill> searchByProvider(String provider) {
+        return billDAO.searchByProvider(provider);
+    }
+
 }

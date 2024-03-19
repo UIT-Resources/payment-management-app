@@ -34,7 +34,7 @@ public class PaymentService {
                 throw new RuntimeException("Pay failed. billIds is empty");
             }
             List<Bill> bills = billIds.stream()
-                    .map(billService::getById)
+                    .map(billService::getBillById)
                     .sorted(Comparator.comparingLong(b -> b.getDueDate().toEpochDay()))
                     .collect(Collectors.toList());
             List<Bill> validBills = bills.stream()
@@ -62,7 +62,7 @@ public class PaymentService {
     }
 
     public void payBill(Integer billId){
-        Bill bill = billService.getById(billId);
+        Bill bill = billService.getBillById(billId);
         if (bill.getState() == BillState.PAID) {
             System.out.println("Bill has already paid.");
             return;
@@ -98,7 +98,7 @@ public class PaymentService {
         if (scheduleDate.isBefore(now)) {
             throw new RuntimeException("Invalid date");
         }
-        Bill bill = billService.getById(scheduleBillId);
+        Bill bill = billService.getBillById(scheduleBillId);
         if (bill.getState() == BillState.PAID) {
             throw new RuntimeException("Bill has already paid");
         }
