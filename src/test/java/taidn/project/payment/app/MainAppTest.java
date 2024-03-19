@@ -1,10 +1,7 @@
 package taidn.project.payment.app;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import taidn.project.payment.app.daos.BillDAO;
-import taidn.project.payment.app.daos.PaymentDAO;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import taidn.project.payment.app.entities.Bill;
 import taidn.project.payment.app.entities.BillState;
 import taidn.project.payment.app.entities.PaymentState;
@@ -13,72 +10,95 @@ import taidn.project.payment.app.services.BillService;
 import taidn.project.payment.app.services.PaymentService;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for simple App.
  */
 public class MainAppTest
-    extends TestCase
 {
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public MainAppTest(String testName )
-    {
-        super( testName );
+    public static BillService billService = BillService.INSTANCE;
+    public static PaymentService paymentService = PaymentService.INSTANCE;
+    public static AccountService accountService = AccountService.INSTANCE;
+
+
+    @Test
+    public void testAccountServiceFunction(){
+        // Init test
+        assertEquals(0, (int) accountService.getCurrentBalance());
+
+        // CashIn test
+        accountService.cashIn(10000);
+        assertEquals(10000, (int) accountService.getCurrentBalance());
+
+        // Pay test
+        accountService.pay(1000);
+        assertEquals(9000, (int) accountService.getCurrentBalance());
     }
 
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite()
+    @Test
+    public void testBillServiceFunctions()
     {
-        return new TestSuite( MainAppTest.class );
+        // Create & List Test
+        Bill bill = new Bill(null, "type1", 10000, LocalDate.now(), null, "VNPT");
+        billService.createBill(bill);
+        assertEquals(1, (int) billService.getAllBills().size());
+        Bill createdBill = billService.getBillById(0);
+        assertEquals(BillState.NOT_PAID, createdBill.getState());
+        assertEquals("type1", createdBill.getType());
+        assertEquals(LocalDate.now(), createdBill.getDueDate());
+        assertEquals("VNPT", createdBill.getProvider());
+        assertEquals(10000, (int) createdBill.getAmount());
+
+        // Update Test
+        createdBill.setAmount(2000);
+        Bill updatedBill = billService.updateBill(createdBill);
+        assertEquals(2000, (int) updatedBill.getAmount());
+
+        // Search By Provider
+        List<Bill> foundedBills = billService.searchByProvider("VNPT");
+        assertEquals(1, (int) foundedBills.size());
+        List<Bill> foundedBills2 = billService.searchByProvider("abc");
+        assertEquals(0, (int) foundedBills2.size());
+
+        // Delete Test
+        billService.deleteBill(updatedBill.getId());
+        assertEquals(0, (int) billService.getAllBills().size());
     }
 
-    /**
-     * Rigourous Test :-)
-     */
-    public void testBillManagement()
-    {
-        BillDAO billDAO = BillDAO.INSTANCE;
-        Bill bill = new Bill(1, "type1", 10000, LocalDate.now(), BillState.PAID, "VNPT");
-        billDAO.create(bill);
-        assertEquals(1, (int) billDAO.getById(1).getId());
+    @Test
+    public void testPaymentManagement() throws InterruptedException {
+        // Create sample bills
+        Bill bill = new Bill(null, "type2", 10000, LocalDate.now(), null, "FPT");
+        Bill createdBill = billService.createBill(bill);
+        Bill bill2 = new Bill(null, "type2", 10000, LocalDate.now().plusDays(6), null, "FPT");
+        Bill createdBill2 = billService.createBill(bill2);
+        List<Bill> bills = billService.getAllBills();
+        System.out.println("bills = " + bills);
 
-        List<Bill> bills = billDAO.getAll();
-        assertTrue(bills.size() == 1 && bills.get(0).getId() == 1);
+        // Pay test: not enough fund case
+        Throwable exp = assertThrows(RuntimeException.class, () -> paymentService.payBills(Arrays.asList(1, 0)));
+        assertEquals("Sorry! Not enough fund to proceed with payment", exp.getMessage());
 
-        bill.setProvider("New");
-        billDAO.update(bill);
-        assertEquals("New", bill.getProvider());
+        // Pay test: enough fund case
+        accountService.cashIn(10000);
+        paymentService.payBills(Collections.singletonList(1));
+        assertEquals(PaymentState.PROCESSED, paymentService.getAllPayments().get(0).getState());
+        assertEquals(BillState.PAID, billService.getBillById(1).getState());
 
-        billDAO.delete(1);
-        assertTrue(billDAO.getAll().isEmpty());
+        // Schedule test
+        accountService.cashIn(10000);
+        paymentService.schedulePayment(0, LocalDate.now());
+        Thread.sleep(1000); // wait for pay process finished
+        assertEquals(PaymentState.PROCESSED, paymentService.getAllPayments().get(1).getState());
+        assertEquals(BillState.PAID, billService.getBillById(0).getState());
+        assertEquals(0, accountService.getCurrentBalance());
 
-    }
-
-    public void testPaymentManagement()
-    {
-        AccountService accountService = AccountService.INSTANCE;
-        accountService.cashIn(100000);
-        BillDAO billDAO = BillService.INSTANCE.getBillDAO();
-        Bill bill1 = new Bill(1, "type1", 10000, LocalDate.now(), BillState.PAID, "VNPT");
-        Bill bill2 = new Bill(2, "type1", 10000, LocalDate.now(), BillState.NOT_PAID, "VNPT");
-        billDAO.create(bill1);
-        billDAO.create(bill2);
-
-        PaymentService paymentService = PaymentService.INSTANCE;
-        paymentService.payBill(2);
-        assertEquals( BillState.PAID, billDAO.getById(2).getState());
-        assertEquals(90000, (int) accountService.getCurrentBalance());
-
-        paymentService.payBill(1);
-        assertEquals( BillState.PAID, billDAO.getById(2).getState());
-        assertEquals(90000, (int) accountService.getCurrentBalance());
 
     }
 }
