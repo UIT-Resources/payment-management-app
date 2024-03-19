@@ -1,6 +1,5 @@
 package taidn.project.payment.app;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import taidn.project.payment.app.entities.Bill;
 import taidn.project.payment.app.entities.BillState;
@@ -20,56 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Unit test for simple App.
  */
-public class MainAppTest
+public class PaymentServiceTest
 {
     public static BillService billService = BillService.INSTANCE;
     public static PaymentService paymentService = PaymentService.INSTANCE;
     public static AccountService accountService = AccountService.INSTANCE;
 
-
-    @Test
-    public void testAccountServiceFunction(){
-        // Init test
-        assertEquals(0, (int) accountService.getCurrentBalance());
-
-        // CashIn test
-        accountService.cashIn(10000);
-        assertEquals(10000, (int) accountService.getCurrentBalance());
-
-        // Pay test
-        accountService.pay(1000);
-        assertEquals(9000, (int) accountService.getCurrentBalance());
-    }
-
-    @Test
-    public void testBillServiceFunctions()
-    {
-        // Create & List Test
-        Bill bill = new Bill(null, "type1", 10000, LocalDate.now(), null, "VNPT");
-        billService.createBill(bill);
-        assertEquals(1, (int) billService.getAllBills().size());
-        Bill createdBill = billService.getBillById(0);
-        assertEquals(BillState.NOT_PAID, createdBill.getState());
-        assertEquals("type1", createdBill.getType());
-        assertEquals(LocalDate.now(), createdBill.getDueDate());
-        assertEquals("VNPT", createdBill.getProvider());
-        assertEquals(10000, (int) createdBill.getAmount());
-
-        // Update Test
-        createdBill.setAmount(2000);
-        Bill updatedBill = billService.updateBill(createdBill);
-        assertEquals(2000, (int) updatedBill.getAmount());
-
-        // Search By Provider
-        List<Bill> foundedBills = billService.searchByProvider("VNPT");
-        assertEquals(1, (int) foundedBills.size());
-        List<Bill> foundedBills2 = billService.searchByProvider("abc");
-        assertEquals(0, (int) foundedBills2.size());
-
-        // Delete Test
-        billService.deleteBill(updatedBill.getId());
-        assertEquals(0, (int) billService.getAllBills().size());
-    }
 
     @Test
     public void testPaymentManagement() throws InterruptedException {
