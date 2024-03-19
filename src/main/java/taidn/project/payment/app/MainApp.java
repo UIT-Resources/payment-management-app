@@ -32,62 +32,64 @@ public class MainApp {
             String commands = Arrays.stream(Command.values()).map(Command::name).collect(Collectors.joining(", "));
             System.out.printf("[Supported commands: %s]%n", commands);
             Scanner sc = new Scanner(System.in);
-            mainFlow:
             while (sc.hasNext()) {
                 List<String> lineParts = Arrays.asList(sc.nextLine().split(" "));
                 if (lineParts.isEmpty()) {
                     continue;
                 }
-                Command cmd;
-                try {
-                    cmd = Command.valueOf(lineParts.get(0));
-                } catch (IllegalArgumentException e) {
-                    System.err.println("Command is invalid. Please try again !");
-                    continue;
-                }
-                try {
-                    switch (cmd) {
-                        case CASH_IN:
-                            processCashIn(lineParts);
-                            break;
-                        case LIST_BILL:
-                            processListBill();
-                            break;
-                        case DUE_DATE:
-                            processDueDate();
-                            break;
-                        case CREATE_BILL:
-                            processCreateBill();
-                            break;
-                        case DELETE_BILL:
-                            processDeleteBill(lineParts);
-                            break;
-                        case SEARCH_BILL_BY_PROVIDER:
-                            processSearchBillByProvider(lineParts);
-                            break;
-                        case UPDATE_BILL:
-                            processUpdateBill();
-                            break;
-                        case LIST_PAYMENT:
-                            processListPayment();
-                            break;
-                        case PAY:
-                            processPay(lineParts);
-                            break;
-                        case SCHEDULE:
-                            processSchedule(lineParts);
-                            break;
-                        case EXIT:
-                            releaseResources();
-                            break mainFlow;
-                    }
-                } catch (RuntimeException e) {
-                    System.err.printf("%s%n", e.getMessage());
-                }
+                if (parseAndExecuteCommand(lineParts)) break;
             }
         } catch (Throwable throwable) {
             System.err.printf("Something went wrong by error: %s%n", throwable.getMessage());
         }
+    }
+
+    private static boolean parseAndExecuteCommand(List<String> lineParts) {
+        try {
+            Command cmd = Command.valueOf(lineParts.get(0));
+            switch (cmd) {
+                case CASH_IN:
+                    processCashIn(lineParts);
+                    break;
+                case LIST_BILL:
+                    processListBill();
+                    break;
+                case DUE_DATE:
+                    processDueDate();
+                    break;
+                case CREATE_BILL:
+                    processCreateBill();
+                    break;
+                case DELETE_BILL:
+                    processDeleteBill(lineParts);
+                    break;
+                case SEARCH_BILL_BY_PROVIDER:
+                    processSearchBillByProvider(lineParts);
+                    break;
+                case UPDATE_BILL:
+                    processUpdateBill();
+                    break;
+                case LIST_PAYMENT:
+                    processListPayment();
+                    break;
+                case PAY:
+                    processPay(lineParts);
+                    break;
+                case SCHEDULE:
+                    processSchedule(lineParts);
+                    break;
+                case EXIT:
+                    releaseResources();
+                    return true;
+                default:
+                    throw new RuntimeException("Unsupported commands");
+            }
+        } catch (IllegalArgumentException e) {
+            System.err.println("Command is invalid. Please try again !");
+        } catch (RuntimeException e) {
+            System.err.printf("%s%n", e.getMessage());
+        }
+        return false;
     }
 
     private static void processListBill() {
