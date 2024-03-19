@@ -9,14 +9,17 @@ public class AccountService {
     private AccountService() {}
 
     public Integer cashIn(Integer amount) {
-        if (amount == null) {
-            return accountBalance.get();
+        if (amount <= 0) {
+            throw new RuntimeException("Amount must be greater than zero");
         }
         return accountBalance.addAndGet(amount);
     }
 
     public Integer pay(Integer amount) {
-        if (amount == null || amount > accountBalance.get()) {
+        if (amount <= 0 ) {
+            throw new RuntimeException("Amount must be greater than zero");
+        }
+        if ( amount > accountBalance.get()) {
             throw new RuntimeException("Sorry! Not enough fund to proceed with payment.");
         }
         return accountBalance.addAndGet(-amount);

@@ -4,6 +4,7 @@ import taidn.project.payment.app.daos.BillDAO;
 import taidn.project.payment.app.entities.Bill;
 import taidn.project.payment.app.entities.BillState;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -24,6 +25,12 @@ public class BillService {
     }
 
     public Bill createBill(Bill param) {
+        if (param.getAmount() < 0) {
+            throw new RuntimeException("Amount must be greater than 0");
+        }
+        if (param.getDueDate().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Due date must be greater or equal than now");
+        }
         param.setId(idGenerator.getAndIncrement());
         param.setState(BillState.NOT_PAID);
         return billDAO.create(param);
