@@ -16,12 +16,13 @@ import java.util.stream.Collectors;
 
 public class PaymentService {
     public static PaymentService INSTANCE = new PaymentService();
-
     private final AtomicInteger idGenerator = new AtomicInteger(0);
-    private final PaymentDAO paymentDao = new PaymentDAO();
+    private final PaymentDAO paymentDao = PaymentDAO.INSTANCE;
     private final BillService billService = BillService.INSTANCE;
     private final AccountService accountService = AccountService.INSTANCE;
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(8);
+
+    private PaymentService() {}
 
     public List<Payment> listAll(){
         return paymentDao.getAll();

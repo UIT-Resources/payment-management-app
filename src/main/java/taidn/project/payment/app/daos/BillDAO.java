@@ -8,10 +8,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BillDAO extends BaseDAO<Bill> {
+    public static BillDAO INSTANCE = new BillDAO();
     private final Map<Integer, Bill> map = new HashMap<>();
-
-    public BillDAO() {
-    }
+    private BillDAO() {}
 
     @Override
     public List<Bill> getAll() {

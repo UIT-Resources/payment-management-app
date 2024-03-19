@@ -13,13 +13,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PaymentDAO extends BaseDAO<Payment> {
+    public static PaymentDAO INSTANCE = new PaymentDAO();
     private final Map<Integer, Payment> map = new HashMap<>();
-
-    public PaymentDAO() {
-//        // TODO: Remove mock data
-//        map.put(111, new Payment(111, 10000, LocalDate.now(), PaymentState.PENDING, 111));
-//        map.put(222, new Payment(222, 10000, LocalDate.now(), PaymentState.PENDING, 112));
-    }
+    private PaymentDAO() {}
 
     @Override
     public List<Payment> getAll() {

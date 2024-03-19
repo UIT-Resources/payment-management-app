@@ -44,7 +44,7 @@ public class MainAppTest
      */
     public void testBillManagement()
     {
-        BillDAO billDAO = new BillDAO();
+        BillDAO billDAO = BillDAO.INSTANCE;
         Bill bill = new Bill(1, "type1", 10000, LocalDate.now(), BillState.PAID, "VNPT");
         billDAO.create(bill);
         assertEquals(1, (int) billDAO.getById(1).getId());

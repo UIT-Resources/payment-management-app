@@ -12,8 +12,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class BillService {
     public static BillService INSTANCE = new BillService();
+    private final BillDAO billDAO = BillDAO.INSTANCE;
     private final AtomicInteger idGenerator = new AtomicInteger(0);
-    private final BillDAO billDAO = new BillDAO();
+
+    private BillService() {}
 
     public List<Bill> listAll() {
         return billDAO.getAll();

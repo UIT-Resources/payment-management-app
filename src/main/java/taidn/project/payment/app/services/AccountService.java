@@ -6,6 +6,8 @@ public class AccountService {
     public static AccountService INSTANCE = new AccountService();
     private final AtomicInteger accountBalance = new AtomicInteger(0);
 
+    private AccountService() {}
+
     public Integer cashIn(Integer amount) {
         if (amount == null) {
             return accountBalance.get();
