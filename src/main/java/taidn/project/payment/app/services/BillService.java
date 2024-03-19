@@ -37,6 +37,10 @@ public class BillService {
     }
 
     public Bill deleteBill(Integer id) {
+        Bill bill = billDAO.getById(id);
+        if (bill.getState() == BillState.PAID) {
+            throw new RuntimeException("Your are not allowed to delete paid bill");
+        }
         return billDAO.delete(id);
     }
 
