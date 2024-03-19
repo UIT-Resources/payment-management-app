@@ -2,15 +2,17 @@ package taidn.project.payment.app.services;
 
 import taidn.project.payment.app.daos.PaymentDAO;
 import taidn.project.payment.app.entities.Bill;
-import taidn.project.payment.app.entities.Payment;
 import taidn.project.payment.app.entities.BillState;
+import taidn.project.payment.app.entities.Payment;
 import taidn.project.payment.app.entities.PaymentState;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -22,58 +24,75 @@ public class PaymentService {
     private final AccountService accountService = AccountService.INSTANCE;
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(8);
 
-    private PaymentService() {}
+    private PaymentService() {
+    }
 
-    public List<Payment> listAll(){
+    public List<Payment> getAllPayments() {
         return paymentDao.getAll();
     }
 
-    public void payBills(List<Integer> billIds){
-        try {
-            if (billIds.isEmpty()) {
-                throw new RuntimeException("Pay failed. billIds is empty");
-            }
-            List<Bill> bills = billIds.stream()
-                    .map(billService::getBillById)
-                    .sorted(Comparator.comparingLong(b -> b.getDueDate().toEpochDay()))
-                    .collect(Collectors.toList());
-            List<Bill> validBills = bills.stream()
-                    .filter(bill -> bill.getState() != BillState.PAID).collect(Collectors.toList());
-            List<Bill> invalidBills = bills.stream()
-                    .filter(bill -> bill.getState() == BillState.PAID).collect(Collectors.toList());
-            for (Bill invalidBill : invalidBills) {
-                System.out.printf("Bill with id %s has already paid%n", invalidBill.getId());
-            }
-            Integer totalBillAmount = validBills.stream().map(Bill::getAmount).reduce(Integer::sum).orElse(0);
-            Integer currentBalance = accountService.getCurrentBalance();
-            if (currentBalance < totalBillAmount) {
-                throw new RuntimeException("Sorry! Not enough fund to proceed with payment");
-            }
-
-            for (Bill bill : validBills) {
-                payBill(bill.getId());
-            }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            String msg = "Pay bills failed. Something went wrong, please try again!";
-            throw new RuntimeException(msg, e);
+    public void payBills(List<Integer> billIds) {
+        if (billIds.isEmpty()) {
+            throw new RuntimeException("Pay failed. billIds is empty");
+        }
+        List<Bill> bills = getSortedBillsByDueDateASC(billIds);
+        List<Bill> validBills = extractNotPaidBills(bills);
+        List<Bill> invalidBills = extractPaidBills(bills);
+        printInvalidBills(invalidBills);
+        checkBalance(validBills);
+        for (Bill bill : validBills) {
+            payBill(bill.getId());
         }
     }
 
-    public void payBill(Integer billId){
+    private static void printInvalidBills(List<Bill> invalidBills) {
+        for (Bill invalidBill : invalidBills) {
+            System.out.printf("Bill with id %s has already paid%n", invalidBill.getId());
+        }
+    }
+
+    private void checkBalance(List<Bill> validBills) {
+        Integer totalBillAmount = validBills.stream().map(Bill::getAmount).reduce(Integer::sum).orElse(0);
+        Integer currentBalance = accountService.getCurrentBalance();
+        if (currentBalance < totalBillAmount) {
+            throw new RuntimeException("Sorry! Not enough fund to proceed with payment");
+        }
+    }
+
+    private static List<Bill> extractPaidBills(List<Bill> bills) {
+        return bills.stream()
+                .filter(bill -> bill.getState() == BillState.PAID).collect(Collectors.toList());
+    }
+
+    private static List<Bill> extractNotPaidBills(List<Bill> bills) {
+        return bills.stream()
+                .filter(bill -> bill.getState() != BillState.PAID).collect(Collectors.toList());
+    }
+
+    private List<Bill> getSortedBillsByDueDateASC(List<Integer> billIds) {
+        return billIds.stream()
+                .map(billService::getBillById)
+                .sorted(Comparator.comparingLong(b -> b.getDueDate().toEpochDay()))
+                .collect(Collectors.toList());
+    }
+
+    public void payBill(Integer billId) {
         Bill bill = billService.getBillById(billId);
         if (bill.getState() == BillState.PAID) {
             System.out.println("Bill has already paid.");
             return;
         }
-        Payment payment = new Payment(idGenerator.getAndIncrement(), bill.getAmount(), LocalDate.now(), PaymentState.PENDING, billId);
-        paymentDao.create(payment);
+        Payment payment = initPayment(billId, bill);
+        executePaymentAndRollbackIfFailed(billId, bill, payment);
+    }
+
+    private void executePaymentAndRollbackIfFailed(Integer billId, Bill bill, Payment payment) {
         try {
-            // Transaction
             accountService.pay(bill.getAmount());
             bill.setState(BillState.PAID);
             payment.setState(PaymentState.PROCESSED);
+            System.out.printf("Payment has been completed for Bill with id %s.%n", billId);
+            System.out.printf("Your current balance is: %s%n", accountService.getCurrentBalance());
         } catch (Throwable e) {
             String msg = e instanceof RuntimeException ? e.getMessage() : "Pay bill failed. Something went wrong, please try again!";
             payment.setState(PaymentState.FAILED);
@@ -83,17 +102,21 @@ public class PaymentService {
             updateState(payment.getId(), payment.getState());
             billService.updateState(bill.getId(), bill.getState());
         }
-        System.out.printf("Payment has been completed for Bill with id %s.%n", billId);
-        System.out.printf("Your current balance is: %s%n", accountService.getCurrentBalance());
     }
 
-    public Payment updateState(Integer id, PaymentState state) {
+    private Payment initPayment(Integer billId, Bill bill) {
+        Payment payment = new Payment(idGenerator.getAndIncrement(), bill.getAmount(), LocalDate.now(), PaymentState.PENDING, billId);
+        paymentDao.create(payment);
+        return payment;
+    }
+
+    public void updateState(Integer id, PaymentState state) {
         Payment payment = paymentDao.getById(id);
         payment.setState(state);
-        return paymentDao.update(payment);
+        paymentDao.update(payment);
     }
 
-    public void schedule(Integer scheduleBillId, LocalDate scheduleDate) {
+    public void schedulePayment(Integer scheduleBillId, LocalDate scheduleDate) {
         LocalDate now = LocalDate.now();
         if (scheduleDate.isBefore(now)) {
             throw new RuntimeException("Invalid date");
@@ -104,18 +127,20 @@ public class PaymentService {
         }
         int delayedDays = now.until(scheduleDate).getDays();
         System.out.printf("Payment for bill id %s is scheduled on %s%n", scheduleBillId, scheduleDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-        scheduledExecutorService.schedule(() -> {
-            try {
-                payBill(bill.getId());
-            } catch (RuntimeException e) {
-                System.err.printf("%n%s%n", e.getMessage());
-            } catch (Throwable throwable ){
-                System.err.printf("Something went wrong by error: %s%n", throwable.getMessage());
-            }
-        }, delayedDays, TimeUnit.DAYS);
+        scheduledExecutorService.schedule(() -> payAndPrintErrorIfRaised(bill), delayedDays, TimeUnit.DAYS);
     }
 
-    public List<Runnable> shutdownAllScheduleTask(){
+    private void payAndPrintErrorIfRaised(Bill bill) {
+        try {
+            payBill(bill.getId());
+        } catch (RuntimeException e) {
+            System.err.printf("%n%s%n", e.getMessage());
+        } catch (Throwable throwable) {
+            System.err.printf("Something went wrong by error: %s%n", throwable.getMessage());
+        }
+    }
+
+    public List<Runnable> shutdownAllScheduleTasks() {
         return scheduledExecutorService.shutdownNow();
     }
 }

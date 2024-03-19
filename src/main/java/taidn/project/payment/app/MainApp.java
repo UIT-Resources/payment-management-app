@@ -124,7 +124,7 @@ public class MainApp {
     }
 
     private static void releaseResources() {
-        List<Runnable> tasks = paymentService.shutdownAllScheduleTask();
+        List<Runnable> tasks = paymentService.shutdownAllScheduleTasks();
         if (!tasks.isEmpty()) {
             System.out.printf("Shutdown %s pending/running schedule tasks%n", tasks.size());
         }
@@ -137,7 +137,7 @@ public class MainApp {
         }
         Integer scheduleBillId = Integer.parseInt(lineParts.get(1));
         LocalDate scheduleDate = LocalDate.parse(lineParts.get(2), DateTimeFormatter.ofPattern("d/M/y"));
-        paymentService.schedule(scheduleBillId, scheduleDate);
+        paymentService.schedulePayment(scheduleBillId, scheduleDate);
     }
 
     private static void processPay(List<String> lineParts) {
@@ -151,7 +151,7 @@ public class MainApp {
     }
 
     private static void processListPayment() {
-        List<Payment> transactions = paymentService.listAll();
+        List<Payment> transactions = paymentService.getAllPayments();
         printListPaymentAsRows(transactions);
     }
 
